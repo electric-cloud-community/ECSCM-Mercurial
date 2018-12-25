@@ -1,0 +1,47 @@
+<?xml version='1.0' standalone='yes'?>
+<fileset>
+  <file>
+    <path>MercurialCfg.pm</path>
+    <xpath>//property[propertyName=&quot;ECSCM::Mercurial::Cfg&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>MercurialDriver.pm</path>
+    <xpath>//property[propertyName=&quot;ECSCM::Mercurial::Driver&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialCheckoutForm.xml</path>
+    <xpath>//property[propertyName=&quot;checkout&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialPreflightForm.xml</path>
+    <xpath>//property[propertyName=&quot;preflight&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialSentryForm.xml</path>
+    <xpath>//property[propertyName=&quot;sentry&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialTriggerForm.xml</path>
+    <xpath>//property[propertyName=&quot;trigger&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialCreateConfigForm.xml</path>
+    <xpath>//property[propertyName=&quot;createConfig&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialEditConfigForm.xml</path>
+    <xpath>//property[propertyName=&quot;editConfig&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>ec_setup.pl</path>
+    <xpath>//property[propertyName=&quot;ec_setup&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialCheckoutForm.xml</path>
+    <xpath>//procedure[procedureName=&quot;CheckoutCode&quot;]/propertySheet/property[propertyName=&quot;ec_parameterForm&quot;]/value</xpath>
+  </file>
+  <file>
+    <path>mercurialPreflightForm.xml</path>
+    <xpath>//procedure[procedureName=&quot;Preflight&quot;]/propertySheet/property[propertyName=&quot;ec_parameterForm&quot;]/value</xpath>
+  </file>
+</fileset>
