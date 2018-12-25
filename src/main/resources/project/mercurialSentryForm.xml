@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<editor>
+    <label>Continuous Integration - Mercurial</label>
+    <version>2.1.0</version>
+    <description>A schedule that is enabled for ElectricSentry continuous integration with Mercurial.</description>
+    <formElement>
+        <type>entry</type>
+        <label>Repository:</label>
+        <property>mercurialRepository</property>
+        <required>1</required>
+        <documentation>The Mercurial repository to use.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Destination directory:</label>
+        <property>dest</property>
+        <required>1</required>
+        <documentation>The directory of the local repository.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Quiet time minutes:</label>
+        <property>QuietTimeMinutes</property>
+        <documentation>The number of minutes of no check-in activity required before launching the procedure.</documentation>
+    </formElement>
+    <formElement>
+        <type>checkbox</type>
+        <label>Enabled for ElectricSentry:</label>
+        <property>TriggerFlag</property>
+        <checkedValue>2</checkedValue>
+        <uncheckedValue>0</uncheckedValue>
+        <initiallyChecked>1</initiallyChecked>
+        <documentation>Enable for continuous integration monitoring by ElectricSentry.</documentation>
+    </formElement>
+    <formElement>
+        <property>scheduleDisabled</property>
+        <value>1</value>
+    </formElement>
+    <formElement>
+        <property>priority</property>
+        <configurable>1</configurable>
+        <value>highest</value>
+    </formElement> 
+</editor>

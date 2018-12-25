@@ -1,0 +1,31 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#CheckoutCode</help>
+    <formElement>
+        <type>entry</type>
+        <label>Configuration:</label>
+        <property>config</property>
+        <documentation>The SCM configuration so use</documentation>
+        <required>1</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Destination Directory:</label>
+        <property>dest</property>
+        <required>1</required>
+        <documentation>A path relative to the job's workspace, where the source tree will be created.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Revision:</label>
+        <property>MercurialRevision</property>
+        <required>0</required>
+        <documentation>Revision number to check out.</documentation>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Depot:</label>
+        <property>depot</property>
+        <required>0</required>
+        <documentation>The revision to which you want to update your code.</documentation>
+    </formElement>
+</editor>

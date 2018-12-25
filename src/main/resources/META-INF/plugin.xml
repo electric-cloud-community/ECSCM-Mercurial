@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+    <key>ECSCM-Mercurial</key>
+    <version>@PLUGIN_VERSION@</version>
+    <label>ECSCM-Mercurial</label>
+    <description>SCM Plugin for Mercurial</description>
+    <author>Electric Cloud</author>
+    <authorUrl>http://www.electric-cloud.com/support</authorUrl>
+    <category>Source Code Management</category>
+    <commander-version min="3.6"/>
+    <depends min="1.0.1">ECSCM</depends>
+	
+	<customTypes>
+	    <customType name="reports">
+          <displayName>Display Mercurial Changelog Report</displayName>
+          <description></description>
+          <page pageName="MercurialReports" definition="pages/reports.xml"/>
+        </customType>
+   </customTypes>
+   <components>
+      <component name="Reports">
+      <javascript>war/ecplugins.ECSCM.Reports/ecplugins.ECSCM.Reports.nocache.js</javascript>
+     </component>
+   </components>
+   
+    <help>ECSCM-Mercurial_help.xml</help>
+</plugin>

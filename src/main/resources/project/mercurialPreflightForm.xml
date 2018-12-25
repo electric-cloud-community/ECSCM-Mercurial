@@ -1,0 +1,16 @@
+<editor>
+    <help>/commander/pages/@PLUGIN_NAME@/@PLUGIN_KEY@_help?s=Administration&amp;ss=Plugins#Preflight</help>
+    <formElement>
+        <type>entry</type>
+        <label>Configuration:</label>
+        <property>config</property>
+        <documentation>The SCM configuration so use</documentation>
+        <required>1</required>
+    </formElement>
+    <formElement>
+        <type>entry</type>
+        <label>Destination Directory:</label>
+        <property>dest</property>
+        <documentation>A path relative to the job's workspace, where the source tree will be created.</documentation>
+    </formElement>
+</editor>

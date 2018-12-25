@@ -1,0 +1,290 @@
+# -*-Perl-*-
+
+# svn.ntest -
+#
+# Exercise basic components of ECSCM-SVN plugin
+#
+# Copyright (c) 2005-2010 Electric Cloud, Inc.
+# All rights reserved
+
+use strict;
+use warnings;
+
+# read in setup and tests that are common to all ECSCM plugin 
+# system tests
+my $commonFile =  "$::gTestFileDir/../../ECSCM/systemtest/ntest.common";
+open F, "< $commonFile";
+my $code = do { local $/; <F> };
+close F;
+eval  $code ;
+
+ntest "check-checkout-present", {}, sub {
+    # Check that the plugin contains required components
+    my $xpath = $::N->getSteps("$::gPlugin_name","CheckoutCode");
+    assertOK($xpath,"get steps");
+    assertEq("checkoutMethod", $xpath->findvalue("//step[1]/stepName"), "step 1 is checkoutMethod");
+};
+    
+ntest "check-getSCMTag-present", {}, sub {
+    my $xpath = $::N->getSteps("$::gPlugin_name","getSCMTag");
+    assertOK($xpath, "get steps");
+    assertEq("tagMethod", $xpath->findvalue("//step[1]/stepName"), "step 1 is getSCMTag");
+
+};
+
+ntest "check-Preflight-present", {}, sub {
+    my $xpath = $::N->getSteps("$::gPlugin_name","Preflight");
+    assertOK($xpath, "get steps");
+    assertEq("preflight", $xpath->findvalue("//step[1]/stepName"), "step 1 is preflight");
+
+};
+
+ntest "check-config code-present", {}, sub {
+    my $xpath = $::N->getProperty("/projects/$::gPlugin_name/scm_driver/$::gPlugin_driver" . "::Cfg");
+    assertOK($xpath,"get cfg property");
+    assertNe("", $xpath->findvalue("//value"), "Config Code");
+};
+
+ntest "check-driver code-present", {}, sub {
+    my $xpath = $::N->getProperty("/projects/$::gPlugin_name/scm_driver/$::gPlugin_driver" . "::Driver");
+    assertOK($xpath,"get driver property");
+};
+
+# Tests specific or customized to this SCM
+ntest "setup-import test project", {}, sub {
+    assertOK($::N->import(
+             { file =>"$::gTestFileDir/import.xml",
+               path  => "/projects/Mercurial Project",
+               force => 1
+             } ), "import test project");
+    assertOK($::N->getProcedure("Mercurial Project", "hg preflight"),"hg preflight procedure exists");
+};
+
+ntest "setup-create configuration", {}, sub {
+    my $xpath = $::N->runProcedure("$::gPlugin_name", 
+        { procedureName => "CreateConfiguration",
+          pollInterval  => "0.2",
+          timeout       => 600,
+          actualParameter => [ 
+            { actualParameterName => "config", value => "test" }, 
+            { actualParameterName => "desc", value => "Mercurial config" }, 
+            { actualParameterName => "credential", value => "test" }, 
+          ],
+          credential => [ 
+            { credentialName => "test", userName => "qa", password => "qa", },
+          ],
+        });
+
+    assertOK($xpath, "run create configuration procedure");
+    # make sure it finished
+    my $jobId = 0;
+    my $status = "";
+    assertDef($xpath, "runProcedure finished without a timeout");
+    if ($xpath) {
+        $jobId  = $xpath->findvalue("//jobId");
+        $status = $xpath->findvalue("//status");
+
+        assertTrue($jobId && $jobId ne "",'valid job id');
+        assertEq("completed",$status,"job $jobId complete");
+
+        #abort if job did not finish
+        if ($status ne "completed") {
+            assertOK($::N->abortJob($jobId, {force => 1}));
+        }
+    }
+
+    # examine log files
+    $xpath = $::N->getJobDetails($jobId);
+
+    writeFile("$::gCurrentTestDir/createConfiguration.log","====Job Details====\n$xpath->{_xml}\n");
+
+    # check that the config and credential exist
+    $xpath = $::N->getProperty("/projects/$::ECSCM/scm_cfgs/test/scmPlugin");
+    assertEq("ECSCM-Mercurial",$xpath->findvalue("//value")->string_value,"config type");
+    $xpath = $::N->getCredential("$::ECSCM","test");
+    assertEq("qa",$xpath->findvalue("//userName")->string_value, "Credential user");
+};
+
+#############################################################
+# Fake output commands
+#############################################################
+
+
+#############################################################
+# test-checkout-code: test the checkout command and output
+#    for the mercurial checkout subprocedure. 
+#   
+#############################################################
+ntest "test checkout code", {}, sub {
+    # fake command output
+    $::gFakeCmdOutput  = `cat $::gTestFileDir/checkout.log`;
+    doSetup();
+    
+    my $xpath = $::N->getActualParameters({projectName => "Mercurial Project", procedureName => "mercurial checkout", stepName => "checkout"});
+    my $clean = $xpath->findvalue("//actualParameter[actualParameterName='clean']/value");
+    my $config = $xpath->findvalue("//actualParameter[actualParameterName='config']/value");
+    my $dest = $xpath->findvalue("//actualParameter[actualParameterName='dest']/value");
+    my $MercurialRevision = $xpath->findvalue("//actualParameter[actualParameterName='MercurialRevision']/value");
+    my $MercurialUrl = $xpath->findvalue("//actualParameter[actualParameterName='MercurialUrl']/value");
+
+    my ($cmd, $out, $err) = runFakeCmd("checkout", $clean, $dest, $MercurialRevision, $MercurialUrl);
+    
+    my $expectedOutput = 'D:\mercurial\repo>hg clone https://bitbucket.org/ArneBab/hello/
+        destination directory: hello
+        requesting all changes
+        adding changesets
+        adding manifests
+        adding file changes
+        added 10 changesets with 10 changes to 1 files
+        updating to branch default
+        7 files updated, 0 files merged, 0 files removed, 0 files unresolved';
+        
+    my @expected = split(/\n/, $expectedOutput);
+    
+    assertEq('hg update --cwd "D:\hello" --revision2',
+        $cmd, 'command misspelled');
+    assertDiff("@expected", $out, 'no output');
+    assertEq(0, $err,'exit code was different than 0');
+
+};
+
+
+#############################################################
+# test preflight server: test the preflight actions from
+#   the server
+#############################################################
+ntest "test preflight client", {}, sub {
+    # fake command output
+    $::gFakeCmdOutput  = `cat $::gTestFileDir/preflight.log`;
+        
+    my ($cmd, $out, $err) = runFakeCmd("ecclientpreflight", 'C:\workspace\TestTeamProject\BuildProcessTemplates\DefaultTemplate.xaml', 'This is a commit comment sample');
+    
+    my $expectedOutput = 'Storing parameter "MercurialRevision" with value "".
+        Storing parameter "MercurialUrl" with value "https://bitbucket.org/ArneBab/hello/".
+        Storing parameter "clean" with value "1".
+        Storing parameter "config" with value "test".
+        Storing parameter "dest" with value "dest".
+        Getting ECSCM bootstrap code from /myProject/procedure_helpers/bootstrap
+        Running boostrap for test ...
+        Loading /plugins/ECSCM-1.1.0.0/project/scm_driver/ECSCM::Base::Cfg..
+        Loading /plugins/ECSCM-1.1.0.0/project/scm_driver/ECSCM::Base::Driver..
+        Log Command: hg clone "https://bitbucket.org/ArneBab/hello/" "dest"
+        checkoutCode returned requesting all changes
+        adding changesets
+        adding manifests
+        adding file changes
+        added 10 changesets with 10 changes to 1 files
+        updating to branch default
+        1 files updated, 0 files merged, 0 files removed, 0 files unresolved';
+
+    my @expected = split(/\n/, $expectedOutput);
+    assertDiff('ecclientpreflight.exe --config .preflight-merc --hgpath=D:/Projects/MercurialTest --autoCommit 1 --commitComment "Fixing bug 2."', 
+        $cmd, 'command misspelled');
+    assertDiff("@expected", $out, 'no output');
+    assertEq(0, $err,'exit code was different than 0');
+
+};
+
+#############################################################
+# test getSCM tag: test the method for the sentry process
+#############################################################
+ntest "test getSCMTag", {}, sub {
+    # fake command output
+    $::gFakeCmdOutput  = `cat $::gTestFileDir/getSCMTag.log`;
+        
+    my ($cmd, $out, $err) = runFakeCmd("getSCMTag", 'C:\workspace\mercurial');
+    my $expectedOutput = 'Log Result: changeset:   10:f96250866c09
+           : tag:         tip
+           : parent:      1:c1317e8fdcf0
+           : user:        jcastro@jcastro.AVANTICA.AVANTICATEC.NET
+           : date:        Tue Sep 07 11:09:32 2010 -0600
+           : summary:     this is my test message
+           : 
+           : changeset:   9:46fa5d393237
+           : user:        Arne Babenhauserheide <bab@draketo.de>
+           : date:        Tue Feb 17 12:37:28 2009 +0100
+           : summary:     More comment polishing.';
+           
+    my @expected = split(/\n/, $expectedOutput);
+    #my @valueFromTest = split(/\n/, $out);
+    
+    assertDiff('hg head --cwd C:\workspace\mercurial', $cmd, 'command misspelled');
+    #assertDiff("@expected", "@valueFromTest", 'no output');
+    assertEq(0, $err,'exit code was different than 0');
+
+};
+
+#############################################################
+# helper routines
+#############################################################
+
+#############################################################
+# importProject: imports a project from the xml file
+#############################################################
+sub importProject() {
+    assertOK($::N->import(
+             { file =>"$::gTestFileDir/import.xml",
+               path  => "/projects/TFS Test Project",
+               force => 1
+             } ), "import runMavenCommandLine");
+    assertOK($::N->getProcedure("Mercurial Project", "hg preflight"), "hg preflight procedure doesn't exist");
+    $::gProjectImported = 1;
+}
+
+#############################################################
+# doSetup: imports a project if it was not done before
+#############################################################
+sub doSetup() {
+    if(! $::gProjectImported) {
+        importProject();
+    }
+}
+
+#############################################################
+# runFakeCmd: run a fake command. Use for testing
+#                                                           
+# cmdin - the command to run
+# input - the text to pipe into cmd (optional)
+#
+# returns
+#   exitstatus - exit code of command
+#   text       - stdout of command
+#############################################################
+sub runFakeCmd
+{
+    my ($fakeCmd, @opts) = @_;
+    my $cmd = "";
+
+    ## for test, if canned output is given, pop off
+    ## the next output block and return
+    if ("$::gFakeCmdOutput" eq "") {
+        # we ran out of fake output
+        return (99,'no more output');
+    }
+    
+    if("checkout" eq $fakeCmd) {
+        $cmd = 'hg update --cwd "' . $opts[1] . '" ';
+        $cmd .= '-C '  if ($opts[0]);
+        $cmd .= '--revision' . $opts[2]  if ($opts[2]);
+    }
+    elsif ("ecclientpreflight" eq $fakeCmd || "apf_driver" eq $fakeCmd ) {
+        $cmd = 'ecclientpreflight.exe --config .preflight-merc --hgpath=D:/Projects/MercurialTest --autoCommit 1 --commitComment "Fixing bug 2."'
+    }
+    elsif("getSCMTag") {
+        $cmd = 'hg head --cwd ' . $opts[0];
+    }
+    
+    my @lines = split(/\|\|/, "$::gFakeCmdOutput");
+    my $text = shift (@lines);
+    my ($exitstatus,$out) = split(/\:\:\:/,$text);
+    chomp $exitstatus;
+
+    # push remaining text 
+    my $newv = join ("\|\|", @lines);
+    $::gFakeCmdOutput = $newv;
+
+    return ($cmd,$out,$exitstatus);
+}
+
+
+1
