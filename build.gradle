@@ -20,7 +20,7 @@ buildscript {
 
 group = 'com.electriccloud'
 description = 'Plugins : ECSCM-Mercurial'
-version = '1.0.2'
+version = '2.0.5'
 
 apply plugin: 'flow-gradle-plugin'
 apply plugin: 'license'
